@@ -95,6 +95,187 @@ Actions are integrated into the main CLI through:
 - Automatic argument parsing and forwarding
 - Exit code handling and logging
 
+## TriggerJob Action JSON Configuration
+
+The `trigger-job` action accepts a JSON configuration via the `--args` parameter. This section documents the complete structure and all available options.
+
+### Basic JSON Structure
+
+```json
+{
+  "parallel": "true|false",
+  "dryRun": "true|false", 
+  "format": "human|json",
+  "workspace": "/path/to/workspace",
+  "timeout": "300",
+  "showArgs": "true|false",
+  "jobs": [
+    {
+      "groupArtifact": "com.example:my-job",
+      "version": "1.0.0",
+      "args": ["--param1=value1", "--param2=value2"]
+    }
+  ]
+}
+```
+
+### Configuration Options
+
+#### Top-Level Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `parallel` | String | `"false"` | Execute jobs in parallel (`"true"`) or sequential (`"false"`) |
+| `dryRun` | String | `"false"` | Download JARs but skip execution (`"true"`) or execute normally (`"false"`) |
+| `format` | String | `"human"` | Output format: `"human"` for readable output, `"json"` for structured data |
+| `workspace` | String | auto-generated | Custom workspace directory path (absolute or relative) |
+| `timeout` | String | `"300"` | Timeout per job execution in seconds |
+| `showArgs` | String | `"false"` | Display all available Astra Runner arguments before execution |
+| `jobs` | Array | default jobs | Custom job configuration (see Job Configuration below) |
+
+#### Job Configuration
+
+Each job in the `jobs` array has the following structure:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `groupArtifact` | String | Yes | Maven coordinates in format `groupId:artifactId` |
+| `version` | String | Yes | Version of artifact to download (supports `latest.release`) |
+| `args` | Array of Strings | Yes | Command line arguments to pass to the JAR |
+
+### Default Jobs Configuration
+
+If no custom `jobs` are provided, the action uses these default jobs:
+
+```json
+{
+  "jobs": [
+    {
+      "groupArtifact": "com.example:data-processor",
+      "version": "latest.release",
+      "args": ["--mode=batch", "--input=/data/input", "--output=/data/output"]
+    },
+    {
+      "groupArtifact": "com.example:notification-service", 
+      "version": "1.0.0",
+      "args": ["--type=email", "--template=job-completion"]
+    },
+    {
+      "groupArtifact": "com.example:cleanup-utility",
+      "version": "latest.release", 
+      "args": ["--target=/tmp", "--age=7d", "--dry-run=false"]
+    }
+  ]
+}
+```
+
+### Example Configurations
+
+#### 1. Basic Parallel Execution
+```bash
+java -jar astra-runner.jar --action=trigger-job --args='{"parallel":"true"}'
+```
+
+#### 2. Dry Run with JSON Output
+```bash
+java -jar astra-runner.jar --action=trigger-job --args='{"dryRun":"true","format":"json"}'
+```
+
+#### 3. Custom Single Job
+```bash
+java -jar astra-runner.jar --action=trigger-job --args='{
+  "jobs": [{
+    "groupArtifact": "com.mycompany:custom-processor",
+    "version": "2.1.0", 
+    "args": ["--config=/app/config.yml", "--mode=production"]
+  }]
+}'
+```
+
+#### 4. Multiple Custom Jobs with Options
+```bash
+java -jar astra-runner.jar --action=trigger-job --args='{
+  "parallel": "true",
+  "timeout": "600",
+  "format": "json",
+  "workspace": "/tmp/my-jobs",
+  "jobs": [
+    {
+      "groupArtifact": "com.example:etl-job",
+      "version": "3.0.0",
+      "args": ["--source=database", "--target=warehouse", "--batch-size=1000"]
+    },
+    {
+      "groupArtifact": "com.example:validation-job", 
+      "version": "latest.release",
+      "args": ["--strict=true", "--report-format=json"]
+    }
+  ]
+}'
+```
+
+#### 5. With Astra Runner Parameters
+```bash
+java -jar astra-runner.jar \
+  --action=trigger-job \
+  --ga=com.parent:orchestrator \
+  --version=1.0.0 \
+  --jvmArgs="-Xmx2g,-Denv=prod" \
+  --args='{"parallel":"true","showArgs":"true"}'
+```
+
+### JSON Output Format
+
+When `format` is set to `"json"`, the action returns structured output:
+
+```json
+{
+  "summary": {
+    "workspace": "/path/to/workspace",
+    "totalJobs": 3,
+    "successfulJobs": 2, 
+    "failedJobs": 1,
+    "startTime": "2025-10-05T23:41:29.808782Z",
+    "endTime": "2025-10-05T23:41:32.156443Z",
+    "totalDurationMs": 2348
+  },
+  "results": [
+    {
+      "groupArtifact": "com.example:data-processor",
+      "version": "latest.release",
+      "jarPath": "./workspace/job-com.example_data-processor/data-processor-latest.release.jar",
+      "args": ["--mode=batch", "--input=/data/input", "--output=/data/output"],
+      "success": true,
+      "exitCode": 0,
+      "message": "Execution completed successfully",
+      "startTime": "2025-10-05T23:41:29.811252Z",
+      "endTime": "2025-10-05T23:41:31.156443Z", 
+      "durationMs": 1345
+    }
+  ]
+}
+```
+
+### Parameter Access
+
+The trigger-job action has access to all Astra Runner CLI parameters:
+
+- `ga` - Group and artifact coordinates from `--ga` parameter
+- `version` - Version from `--version` parameter  
+- `jvmArgs` - JVM arguments from `--jvmArgs` parameter
+- All other CLI options and their values
+
+Use `showArgs: "true"` to display all available parameters during execution.
+
+### Error Handling
+
+Invalid JSON configurations will result in:
+- Parse errors with specific details about malformed JSON
+- Validation errors for missing required fields
+- Execution errors with job-specific failure details
+
+The action uses fail-fast behavior - any configuration error stops execution before job processing begins.
+
 ## Creating New Actions
 
 ### 1. Implement CliAction Interface
