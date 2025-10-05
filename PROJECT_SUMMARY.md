@@ -46,8 +46,19 @@ I have successfully created a **complete working Java application** that automat
 ./astra.sh build
 ```
 
-### 3. Run Example
+### 3. Run System Information
 ```bash
+# Display system information and Java version
+java -jar app/build/libs/astra-runner.jar --action=system-info
+
+# Show all arguments passed to the application
+java -jar app/build/libs/astra-runner.jar --action=show-args --ga=com.example:test --version=1.0.0
+
+# Get comprehensive info in JSON format
+java -jar app/build/libs/astra-runner.jar --action=info --args='{"format":"json"}'
+```
+
+### 4. Run Example Task
 ./astra.sh example
 ```
 
@@ -75,6 +86,8 @@ astra-runner/
 ├── app/                        # Spring Boot application
 │   ├── src/main/java/com/acme/astra/app/
 │   │   ├── cli/               # Command-line interface
+│   │   │   ├── action/        # CLI action system (system-info, show-args, info)
+│   │   │   └── AstraRunnerCLI.java
 │   │   ├── rest/              # REST API controllers
 │   │   └── AstraRunnerApplication.java
 │   ├── src/main/resources/
@@ -108,6 +121,14 @@ astra-runner/
 - **JUnit XML**: Compatible with CI/CD test reporting
 - **HTML Report**: Human-readable summary with styling
 - **Log Files**: Separate stdout/stderr capture
+
+### CLI Action System
+- **Extensible utility actions** for system diagnostics and information gathering
+- **SystemInfoAction**: Displays Java version, OS details, memory usage, runtime arguments
+- **ArgumentsAction**: Shows all arguments in multiple formats (table, JSON, env, properties)
+- **InfoAction**: Combined system and argument information with JSON support
+- **Auto-discovery**: Actions automatically registered via Spring component scanning
+- **Rich help system**: Comprehensive usage examples and documentation
 
 ### REST API
 - **Synchronous execution**: `/api/v1/execute`
@@ -155,6 +176,23 @@ pipeline {
 - **Input validation** and sanitization
 - **Timeout protection** against runaway processes
 
+## 🛠️ Utility Features
+
+### CLI Actions
+The application provides utility actions for system diagnostics:
+- **`--action=system-info`**: Java version, OS details, memory usage, runtime info
+- **`--action=show-args`**: Display arguments in table, JSON, env, or properties format
+- **`--action=info`**: Comprehensive system and argument information
+- **Extensible architecture** for adding new utility actions
+- **Multiple output formats** including JSON for programmatic consumption
+
+### Command Execution Utilities
+Reusable utilities for command-based tasks:
+- **CommandExecutor**: Fluent API for process execution with timeout and output capture
+- **CommandBuilder**: Builder patterns for Docker, Git, database, HTTP, Maven, Gradle commands
+- **TaskResultMapper**: Convert command results to standard TaskResult format
+- **Comprehensive error handling** and metrics collection
+
 ## 🧪 Testing & Validation
 
 The application includes:
@@ -199,6 +237,41 @@ The application includes:
 4. **Add monitoring and alerting** for production usage
 
 5. **Implement caching** for frequently accessed artifacts
+
+## 📖 Quick Reference
+
+### CLI Actions
+```bash
+# System information with Java version and OS details
+java -jar astra-runner.jar --action=system-info
+
+# Display all arguments in table format
+java -jar astra-runner.jar --action=show-args --ga=com.example:test --version=1.0.0
+
+# Comprehensive info in JSON format
+java -jar astra-runner.jar --action=info --args='{"format":"json"}'
+
+# Show arguments in environment variable format
+java -jar astra-runner.jar --action=show-args --args='{"format":"env"}'
+```
+
+### Artifact Execution
+```bash
+# Execute via CLI mode
+java -jar astra-runner.jar --ga=com.example:my-task --version=1.0.0 --mode=CLI --args='{"param":"value"}'
+
+# Execute via SPI mode  
+java -jar astra-runner.jar --ga=com.example:my-task --version=latest.release --mode=SPI --args='{"debug":"true"}'
+
+# Start REST API server
+java -jar astra-runner.jar --rest
+```
+
+### Available Actions
+- **system-info**: Java version, OS, memory, runtime arguments
+- **show-args**: Arguments in table/JSON/env/properties format  
+- **info**: Combined system and argument information
+- **Custom actions**: Extensible via CliAction interface
 
 ## 🏆 Conclusion
 
