@@ -1,7 +1,7 @@
 package com.acme.astra.engine;
 
 import com.acme.astra.engine.resolver.ArtifactResolver;
-import com.acme.astra.engine.executor.TaskExecutor;
+import com.acme.astra.engine.executor.ArtifactExecutor;
 import com.acme.astra.engine.report.ReportGenerator;
 import com.acme.astra.model.ExecutionConfig;
 import com.acme.astra.model.RunSummary;
@@ -26,7 +26,7 @@ class AstraEngineTest {
     private ArtifactResolver artifactResolver;
     
     @Mock
-    private TaskExecutor taskExecutor;
+    private ArtifactExecutor artifactExecutor;
     
     @Mock
     private ReportGenerator reportGenerator;
@@ -39,7 +39,7 @@ class AstraEngineTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        engine = new AstraEngine(artifactResolver, taskExecutor, reportGenerator);
+        engine = new AstraEngine(artifactResolver, artifactExecutor, reportGenerator);
     }
     
     @Test
@@ -56,7 +56,7 @@ class AstraEngineTest {
         
         try {
             when(artifactResolver.resolve(any(), any(), any())).thenReturn(artifact);
-            when(taskExecutor.execute(any(), any(), any())).thenReturn(com.acme.spi.TaskResult.success());
+            when(artifactExecutor.execute(any(), any(), any())).thenReturn(com.acme.spi.TaskResult.success());
             
             // When
             RunSummary result = engine.execute(config, tempDir);
