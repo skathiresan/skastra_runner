@@ -1,5 +1,6 @@
 package com.acme.astra.app.cli;
 
+import com.acme.astra.app.cli.action.ActionRegistry;
 import com.acme.astra.engine.AstraEngine;
 import com.acme.astra.model.ExecutionConfig;
 import com.acme.astra.model.RunSummary;
@@ -19,6 +20,7 @@ import picocli.spring.PicocliSpringFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -32,19 +34,20 @@ public class AstraRunnerCLI implements CommandLineRunner, Callable<Integer>, Exi
     
     private static final Logger log = LoggerFactory.getLogger(AstraRunnerCLI.class);
     
+    @Option(names = {"--action"}, 
+            description = "Execute a specific action (system-info, show-args)")
+    private String action;
+    
     @Option(names = {"--ga", "--group-artifact"}, 
-            description = "Group:Artifact identifier (e.g., com.example:my-lib)", 
-            required = true)
+            description = "Group:Artifact identifier (e.g., com.example:my-lib)")
     private String groupArtifact;
     
     @Option(names = {"--version", "-v"}, 
-            description = "Version (exact, latest.release, or semver pattern)", 
-            required = true)
+            description = "Version (exact, latest.release, or semver pattern)")
     private String version;
     
     @Option(names = {"--mode", "-m"}, 
-            description = "Execution mode: ${COMPLETION-CANDIDATES}", 
-            required = true)
+            description = "Execution mode: ${COMPLETION-CANDIDATES}")
     private ExecutionConfig.ExecutionMode mode;
     
     @Option(names = {"--argsJson", "--args"}, 
@@ -76,12 +79,14 @@ public class AstraRunnerCLI implements CommandLineRunner, Callable<Integer>, Exi
     private boolean restMode;
     
     private final AstraEngine engine;
+    private final ActionRegistry actionRegistry;
     private final ObjectMapper objectMapper;
     private int exitCode = 0;
     
     @Autowired
-    public AstraRunnerCLI(AstraEngine engine) {
+    public AstraRunnerCLI(AstraEngine engine, ActionRegistry actionRegistry) {
         this.engine = engine;
+        this.actionRegistry = actionRegistry;
         this.objectMapper = new ObjectMapper();
     }
     
@@ -94,6 +99,11 @@ public class AstraRunnerCLI implements CommandLineRunner, Callable<Integer>, Exi
     
     @Override
     public Integer call() throws Exception {
+        // Handle action execution
+        if (action != null) {
+            return executeAction();
+        }
+        
         if (restMode) {
             log.info("Starting in REST API mode - server will continue running");
             return 0; // Let Spring Boot continue running the web server
@@ -102,7 +112,8 @@ public class AstraRunnerCLI implements CommandLineRunner, Callable<Integer>, Exi
         // Check if required parameters are provided
         if (groupArtifact == null || version == null || mode == null) {
             log.info("No CLI execution parameters provided - starting in REST API mode");
-            log.info("Use --help to see available options");
+            log.info("Use --help to see available options or use --action to run utility actions");
+            printAvailableActions();
             return 0;
         }
         
@@ -155,5 +166,63 @@ public class AstraRunnerCLI implements CommandLineRunner, Callable<Integer>, Exi
     @Override
     public int getExitCode() {
         return exitCode;
+    }
+    
+    /**
+     * Execute the specified action.
+     */
+    private Integer executeAction() {
+        log.info("Executing action: {}", action);
+        
+        // Build arguments from CLI options
+        Map<String, String> actionArgs = buildActionArguments();
+        
+        // Execute the action
+        int exitCode = actionRegistry.executeAction(action, actionArgs);
+        
+        log.info("Action '{}' completed with exit code: {}", action, exitCode);
+        return exitCode;
+    }
+    
+    /**
+     * Build arguments map from CLI options for action execution.
+     */
+    private Map<String, String> buildActionArguments() {
+        Map<String, String> args = new HashMap<>();
+        
+        // Add CLI options as arguments
+        if (groupArtifact != null) args.put("ga", groupArtifact);
+        if (version != null) args.put("version", version);
+        if (mode != null) args.put("mode", mode.toString());
+        if (argsJson != null) args.put("argsJson", argsJson);
+        if (reportsDir != null) args.put("reportsDir", reportsDir);
+        if (workspaceDir != null) args.put("workspaceDir", workspaceDir);
+        if (timeoutMs != 0) args.put("timeout", String.valueOf(timeoutMs));
+        if (jvmArgs != null) args.put("jvmArgs", jvmArgs);
+        args.put("restMode", String.valueOf(restMode));
+        
+        // Parse any additional arguments from argsJson if available
+        if (argsJson != null && !argsJson.equals("{}")) {
+            try {
+                Map<String, String> jsonArgs = objectMapper.readValue(argsJson, new TypeReference<Map<String, String>>() {});
+                args.putAll(jsonArgs);
+            } catch (Exception e) {
+                log.warn("Failed to parse argsJson: {}", e.getMessage());
+            }
+        }
+        
+        return args;
+    }
+    
+    /**
+     * Print available actions when no parameters are provided.
+     */
+    private void printAvailableActions() {
+        System.out.println();
+        System.out.println("🚀 Astra Runner - Available Actions:");
+        actionRegistry.printAllActionsUsage();
+        
+        System.out.println("For artifact execution, provide --ga, --version, and --mode parameters.");
+        System.out.println("For REST API mode, use --rest flag.");
     }
 }
