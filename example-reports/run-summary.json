@@ -1,0 +1,36 @@
+{
+  "executionId" : "331cd484-d3bb-4426-b25f-6ccdec803746",
+  "timestamp" : 1759692598.218996000,
+  "config" : {
+    "groupArtifact" : "com.example:sample-task",
+    "version" : "1.0.0",
+    "mode" : "SPI",
+    "arguments" : {
+      "name" : "Astra",
+      "greeting" : "Hello",
+      "createExtra" : "true"
+    },
+    "reportsDir" : "example-reports",
+    "timeout" : 300000,
+    "jvmArgs" : null
+  },
+  "resolvedArtifact" : {
+    "groupId" : "com.example",
+    "artifactId" : "sample-task",
+    "version" : "1.0.0",
+    "sha256" : "4f59e88a8f7ef1d4b0ac6245be7c3aa716fd10524d9e10d2b2db2a21810c0a02",
+    "path" : "example-workspace/temp-gradle-build/sample-task-1.0.0.jar",
+    "dependencies" : [ "org.slf4j:slf4j-api:2.0.9", "com.fasterxml.jackson.core:jackson-core:2.16.0" ]
+  },
+  "executionResult" : {
+    "status" : "FAILURE",
+    "exitCode" : null,
+    "startTime" : 1759692598.224822000,
+    "endTime" : 1759692598.225537000,
+    "durationMs" : 1,
+    "message" : "No Task interface or implementation found in artifact",
+    "errors" : null
+  },
+  "outputFiles" : null,
+  "summary" : null
+}

@@ -1,0 +1,11 @@
+{
+  "status" : "FAILURE",
+  "message" : "No Task interface or implementation found in artifact",
+  "exitCode" : null,
+  "startTime" : 1759692598.224822000,
+  "endTime" : 1759692598.225537000,
+  "duration" : 1,
+  "outputFiles" : null,
+  "metrics" : null,
+  "errors" : null
+}
