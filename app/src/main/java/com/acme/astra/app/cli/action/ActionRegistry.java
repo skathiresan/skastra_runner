@@ -61,6 +61,33 @@ public class ActionRegistry {
     }
     
     /**
+     * Get all available actions with their descriptions.
+     * Used by REST API for action listing.
+     */
+    public List<ActionInfo> getAvailableActions() {
+        return actions.stream()
+                .map(action -> new ActionInfo(action.getName(), action.getDescription()))
+                .sorted((a, b) -> a.getName().compareTo(b.getName()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Action information DTO for REST API.
+     */
+    public static class ActionInfo {
+        private final String name;
+        private final String description;
+        
+        public ActionInfo(String name, String description) {
+            this.name = name;
+            this.description = description;
+        }
+        
+        public String getName() { return name; }
+        public String getDescription() { return description; }
+    }
+    
+    /**
      * Print usage information for a specific action.
      */
     public void printActionUsage(String actionName) {
